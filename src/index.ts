@@ -13,7 +13,7 @@ const __dirname = path.dirname(__filename);
 const program = new Command();
 
 program
-  .name("skilld")
+  .name("skilld-ai")
   .description("CLI scaffolding for AI Agent Team & Collaboration Framework")
   .version("0.1.0");
 
@@ -22,7 +22,7 @@ program
   .description("Initialize AI Agent Team Constitution and Docs into project")
   .option("-y, --yes", "Skip interactive prompts and use defaults")
   .action(async (options) => {
-    p.intro(pc.bgCyan(pc.black(" skilld - AI Agent Team Framework ")));
+    p.intro(pc.bgCyan(pc.black(" skilld-ai - AI Agent Team Framework ")));
 
     const cwd = process.cwd();
     const s = p.spinner();

@@ -1,24 +1,24 @@
-# 🤖 skilld
+# 🤖 skilld-ai
 
 > **Production-grade AI Agent Team and Collaboration Framework CLI for modern software development.**
 
-`skilld` bootstraps a structured AI developer team (`/dc`, `/dev`, `/dvb`, `/dvf`, `/dta`, `/dtf`, `/qa`, `/ops`) and strict collaboration contracts (`AGENTS.md`, `docs/`) into any repository with zero configuration.
+`skilld-ai` bootstraps a structured AI developer team (`/dc`, `/dev`, `/dvb`, `/dvf`, `/dta`, `/dtf`, `/qa`, `/ops`) and strict collaboration contracts (`AGENTS.md`, `docs/`) into any repository with zero configuration.
 
 ---
 
 ## 🚀 Quick Start
 
-Initialize `skilld` in your existing codebase or blank repository:
+Initialize `skilld-ai` in your existing codebase or blank repository:
 
 ```bash
 # Using npm
-npx skilld init
+npx skilld-ai init
 
 # Using pnpm
-pnpm dlx skilld init
+pnpm dlx skilld-ai init
 
 # Using yarn
-yarn dlx skilld init
+yarn dlx skilld-ai init
 ```
 
 ### Modes

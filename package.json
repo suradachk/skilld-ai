@@ -1,17 +1,25 @@
 {
-  "name": "skilld",
+  "name": "skilld-ai",
   "version": "0.1.0",
   "description": "Production-grade AI agent team and collaboration framework CLI for modern projects",
   "type": "module",
   "bin": {
+    "skilld-ai": "./dist/index.js",
     "skilld": "./dist/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/suradachk/skilld-ai.git"
+  },
+  "homepage": "https://github.com/suradachk/skilld-ai#readme",
+  "bugs": {
+    "url": "https://github.com/suradachk/skilld-ai/issues"
   },
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "files": [
-    "dist",
-    "templates"
+    "dist"
   ],
   "engines": {
     "node": ">=22.0.0"
