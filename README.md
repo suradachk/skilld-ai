@@ -21,6 +21,16 @@ pnpm dlx skilld-ai init
 yarn dlx skilld-ai init
 ```
 
+### 🔍 Codebase Architecture Scanner
+Scan project structure (including Monorepos, frontend/backend splits) and inspect detected tech stack:
+
+```bash
+npx skilld-ai scan
+
+# Or scan and auto-sync to docs/ARCHITECTURE.md
+npx skilld-ai scan --update-docs
+```
+
 ### 🩺 Health & Compliance Check
 Run health check diagnostics anytime to ensure AI compliance and secret security:
 

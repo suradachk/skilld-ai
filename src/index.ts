@@ -18,7 +18,7 @@ const program = new Command();
 program
   .name("skilld-ai")
   .description("CLI scaffolding for AI Agent Team & Collaboration Framework")
-  .version("0.2.0");
+  .version("0.3.0");
 
 program
   .command("init")
@@ -37,14 +37,15 @@ program
     s.stop("Project scanned.");
 
     if (ctx.isExisting) {
-      p.note(
-        `Found existing project: ${pc.bold(ctx.name)}\n` +
-          `• Framework : ${pc.green(ctx.framework || "Custom")}\n` +
-          `• TypeScript: ${ctx.hasTypeScript ? pc.green("Yes") : pc.yellow("No")}\n` +
-          `• Database  : ${pc.cyan(ctx.database || "None")}\n` +
-          `• PkgManager: ${pc.magenta(ctx.packageManager || "npm")}`,
-        "Auto-Detected Project"
-      );
+      let details = `Found project: ${pc.bold(ctx.name)}\n`;
+      if (ctx.frontend) details += `• Frontend  : ${pc.green(ctx.frontend.framework)} (${ctx.frontend.path})\n`;
+      if (ctx.backend) details += `• Backend   : ${pc.green(ctx.backend.framework)} (${ctx.backend.path})\n`;
+      if (!ctx.frontend && !ctx.backend) details += `• Framework : ${pc.green(ctx.framework || "Custom")}\n`;
+      details += `• TypeScript: ${ctx.hasTypeScript ? pc.green("Yes") : pc.yellow("No")}\n`;
+      details += `• Database  : ${pc.cyan(ctx.database || "None")}\n`;
+      details += `• PkgManager: ${pc.magenta(ctx.packageManager || "npm")}`;
+
+      p.note(details, ctx.isMonorepo ? "Auto-Detected Monorepo / Multi-App" : "Auto-Detected Project");
     } else {
       p.log.info(pc.yellow("No existing project configuration detected (Blank Workspace)."));
       if (!options.yes) {
@@ -88,6 +89,8 @@ program
         ctx = {
           isExisting: false,
           name: answers.name as string,
+          isMonorepo: false,
+          subApps: [],
           framework: answers.framework as string,
           hasTypeScript: true,
           database: answers.database as string,
@@ -173,6 +176,51 @@ program
     } else {
       p.outro(pc.green("✅ All core AI team compliance checks passed!"));
     }
+  });
+
+program
+  .command("scan")
+  .description("Scan codebase and display detected tech stack, architecture, and sub-apps")
+  .option("-u, --update-docs", "Automatically sync detected architecture to docs/")
+  .action(async (options) => {
+    p.intro(pc.bgBlue(pc.white(" skilld-ai Scanner: Codebase Analysis ")));
+
+    const cwd = process.cwd();
+    const s = p.spinner();
+    s.start("Scanning repository and sub-packages...");
+    const ctx = await detectProject(cwd);
+    s.stop("Codebase analysis completed.");
+
+    console.log("");
+    console.log(`| Layer / Sub-App | Path | Detected Framework / Stack | Type |`);
+    console.log(`| :--- | :--- | :--- | :---: |`);
+
+    if (ctx.frontend) {
+      console.log(`| Frontend | \`${ctx.frontend.path}\` | ${ctx.frontend.framework} | Client |`);
+    }
+    if (ctx.backend) {
+      console.log(`| Backend | \`${ctx.backend.path}\` | ${ctx.backend.framework} | Service |`);
+    }
+    for (const sub of ctx.subApps) {
+      if (sub.path !== ctx.frontend?.path && sub.path !== ctx.backend?.path) {
+        console.log(`| Sub-Package | \`${sub.path}\` | ${sub.framework} | ${sub.type} |`);
+      }
+    }
+    if (!ctx.frontend && !ctx.backend && ctx.subApps.length === 0) {
+      console.log(`| App | \`.\` | ${ctx.framework || "Custom / Vanilla"} | Application |`);
+    }
+    console.log(`| Database / Storage | - | ${ctx.database || "None detected"} | Data Layer |`);
+    console.log(`| Language Runtime | - | ${ctx.hasTypeScript ? "TypeScript" : "JavaScript"} | Language |`);
+    console.log(`| Package Manager | - | ${ctx.packageManager || "npm"} | Tooling |`);
+    console.log("");
+
+    if (options.updateDocs) {
+      s.start("Updating docs/ARCHITECTURE.md...");
+      await generateProjectDocs(cwd, ctx);
+      s.stop("Documentation synchronized with codebase.");
+    }
+
+    p.outro(pc.green(`✅ Repository type: ${ctx.isMonorepo ? "Monorepo / Multi-App" : "Single Package"}`));
   });
 
 program.parse();
