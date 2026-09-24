@@ -4,8 +4,11 @@ import pc from "picocolors";
 import path from "node:path";
 import fs from "fs-extra";
 import { fileURLToPath } from "node:url";
-import { detectProject, type ProjectContext } from "./scanner.js";
+import { detectProject } from "./scanner.js";
 import { generateProjectDocs } from "./generator.js";
+import { generateEditorAdapters } from "./adapters.js";
+import { setupGitHooks } from "./hooks.js";
+import { runHealthCheck } from "./doctor.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -15,12 +18,14 @@ const program = new Command();
 program
   .name("skilld-ai")
   .description("CLI scaffolding for AI Agent Team & Collaboration Framework")
-  .version("0.1.0");
+  .version("0.2.0");
 
 program
   .command("init")
-  .description("Initialize AI Agent Team Constitution and Docs into project")
+  .description("Initialize AI Agent Team Constitution, Docs, Editor Adapters, and Git Hooks")
   .option("-y, --yes", "Skip interactive prompts and use defaults")
+  .option("--no-adapters", "Do not generate editor rules (.cursorrules, CLAUDE.md, etc.)")
+  .option("--no-hooks", "Do not install pre-commit git hooks")
   .action(async (options) => {
     p.intro(pc.bgCyan(pc.black(" skilld-ai - AI Agent Team Framework ")));
 
@@ -68,7 +73,7 @@ program
                   { value: "PostgreSQL (Prisma)", label: "PostgreSQL with Prisma ORM" },
                   { value: "PostgreSQL (Drizzle)", label: "PostgreSQL with Drizzle ORM" },
                   { value: "MongoDB", label: "MongoDB" },
-                  { value: "None", label: "None / Stateles" },
+                  { value: "None", label: "None / Stateless" },
                 ],
               }),
           },
@@ -111,15 +116,63 @@ program
     // Generate docs/
     await generateProjectDocs(cwd, ctx);
 
+    // Generate Editor Adapters (.cursorrules, CLAUDE.md, etc.)
+    if (options.adapters !== false) {
+      await generateEditorAdapters(cwd);
+    }
+
+    // Setup Git Hooks
+    if (options.hooks !== false && (await fs.pathExists(path.join(cwd, ".git")))) {
+      await setupGitHooks(cwd);
+    }
+
     s.stop("All files created successfully.");
 
     p.outro(
       pc.green("🎉 Skilld AI Framework ready!\n") +
         `• Constitution: ${pc.bold("AGENTS.md")}\n` +
         `• Agent Skills: ${pc.bold(".agents/skills/*")}\n` +
-        `• System Docs : ${pc.bold("docs/*")}\n\n` +
+        `• System Docs : ${pc.bold("docs/*")}\n` +
+        `• Editor Rules: ${pc.bold(".cursorrules, CLAUDE.md, copilot-instructions.md")}\n` +
+        `• Secret Guard: ${pc.bold(".husky/pre-commit")}\n\n` +
         `Try invoking your team: ${pc.cyan("/dc")}, ${pc.cyan("/dev")}, ${pc.cyan("/dvb")}, ${pc.cyan("/dvf")}`
     );
+  });
+
+program
+  .command("doctor")
+  .description("Run diagnostics and health check on AI team compliance and security")
+  .action(async () => {
+    p.intro(pc.bgMagenta(pc.white(" skilld-ai Doctor: Project Health & Compliance ")));
+
+    const cwd = process.cwd();
+    const s = p.spinner();
+    s.start("Running diagnostics...");
+    const diagnostics = await runHealthCheck(cwd);
+    s.stop("Diagnostics completed.");
+
+    console.log("");
+    console.log(
+      `| Category | Check Item | Status | Details |`
+    );
+    console.log(
+      `| :--- | :--- | :---: | :--- |`
+    );
+
+    let hasErrors = false;
+    for (const item of diagnostics) {
+      const icon = item.status === "pass" ? pc.green("PASS") : item.status === "warn" ? pc.yellow("WARN") : pc.red("FAIL");
+      if (item.status === "fail") hasErrors = true;
+      console.log(`| ${item.category} | ${item.name} | ${icon} | ${item.message} |`);
+    }
+
+    console.log("");
+    if (hasErrors) {
+      p.outro(pc.red("❌ Some critical compliance checks failed! Please review the table above."));
+      process.exit(1);
+    } else {
+      p.outro(pc.green("✅ All core AI team compliance checks passed!"));
+    }
   });
 
 program.parse();

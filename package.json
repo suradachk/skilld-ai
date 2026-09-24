@@ -1,6 +1,6 @@
 {
   "name": "skilld-ai",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Production-grade AI agent team and collaboration framework CLI for modern projects",
   "type": "module",
   "bin": {
@@ -28,7 +28,8 @@
     "build": "tsup",
     "dev": "tsup --watch",
     "start": "node dist/index.js",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "prepare": "husky"
   },
   "keywords": [
     "ai",

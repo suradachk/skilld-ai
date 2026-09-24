@@ -1,4 +1,4 @@
-# 📏 Coding Standards & Conventions: skilld
+# 📏 Coding Standards & Conventions: skilld-ai
 
 > ข้อตกลงร่วมในการเขียนโค้ด การตั้งชื่อ และโครงสร้างไฟล์
 

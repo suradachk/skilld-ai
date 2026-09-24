@@ -1,0 +1,12 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+echo "🛡️ [skilld-ai] Running Pre-Commit Quality & Secret Checks..."
+
+# Check for hardcoded private keys or tokens
+if git diff --cached | grep -E "AKIA[0-9A-Z]{16}|ghp_[0-9a-zA-Z]{36}|AIza[0-9A-Za-z\-_]{35}"; then
+  echo "❌ [BLOCKED] Potential Secret / API Key detected in staged files!"
+  exit 1
+fi
+
+echo "✅ [skilld-ai] Secret check passed."

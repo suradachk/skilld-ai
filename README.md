@@ -21,9 +21,19 @@ pnpm dlx skilld-ai init
 yarn dlx skilld-ai init
 ```
 
-### Modes
-- **Brownfield (Existing Repo)**: Auto-scans `package.json`, framework, TypeScript, database/ORM, and package manager to populate `docs/` automatically.
-- **Greenfield (Blank Repo)**: Interactive prompt asking for framework, database, and tech stack preferences.
+### 🩺 Health & Compliance Check
+Run health check diagnostics anytime to ensure AI compliance and secret security:
+
+```bash
+npx skilld-ai doctor
+```
+
+### Supported AI Coding Environments
+- **Antigravity**: Native `.agents/skills/*` with 8 slash commands
+- **Cursor**: Auto-generated `.cursorrules`
+- **GitHub Copilot**: Auto-generated `.github/copilot-instructions.md`
+- **Claude Code**: Auto-generated `CLAUDE.md`
+- **Git Security**: Pre-commit secret shield via `.husky/pre-commit`
 
 ---
 
