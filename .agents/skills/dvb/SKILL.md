@@ -37,13 +37,24 @@ Follow this standard bottom-up implementation flow:
    - Run or generate migration scripts. Never mutate production databases manually.
 3. **Data Access / Repository Layer**:
    - Implement queries with proper indexing and relationship preloading to avoid N+1 queries.
+   - **Zero-Downtime DB Rule**: Never rename columns directly in production. Use expand-contract pattern (Add new column -> Dual write -> Migrate data -> Deprecate old).
 4. **Business Logic / Service Layer**:
    - Handle transactional integrity (`BEGIN ... COMMIT / ROLLBACK`).
    - Validate business constraints (uniqueness, permissions, state transitions).
 5. **Controller / Endpoint Layer**:
    - Bind validation schemas (Zod, class-validator, Pydantic) to request payloads.
    - Apply Authentication Guards and Authorization Middleware.
-   - Return standardized response wrappers.
+   - **Standard Result Envelope**: Every API response MUST follow the standardized envelope:
+     ```typescript
+     // Success
+     { "success": true, "data": T, "meta"?: { "page": 1, "total": 100 } }
+     // Error
+     { "success": false, "error": { "code": "RESOURCE_NOT_FOUND", "message": "Item does not exist" } }
+     ```
+
+### 3. Backend Architecture & File Colocation Patterns
+- Organize by feature/domain: `src/modules/[feature]/` containing `*.controller.ts`, `*.service.ts`, `*.repository.ts`, `*.dto.ts`.
+- Naming convention: `kebab-case.role.ts` (e.g. `order-item.service.ts`).
 
 ### 3. Backend Quality Checklist
 Before handing off to `/dta`:

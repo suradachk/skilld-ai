@@ -31,11 +31,16 @@ List out test scenarios before writing test code:
 - **Boundary & Edge Cases**: Empty arrays, 0 values, massive payloads, duplicate submissions.
 - **Security / Permissions**: Attempting access with insufficient roles (e.g., standard user calling admin endpoints).
 
-### 2. Execution Sequence
-1. Identify the project test runner (Jest, Vitest, Pytest, Go test, Playwright).
-2. Create test files following project naming conventions (e.g., `*.spec.ts`, `*.test.ts`).
-3. Set up clean test fixtures, mocks, or ephemeral database states. Never mutate persistent shared environments without cleanup.
-4. Run tests and assert expectations clearly (`expect(...)`).
+### 2. Execution Sequence & Test Patterns
+1. **AAA Pattern (Arrange-Act-Assert)**: Every test block must be organized into 3 clear phases:
+   - **Arrange**: Set up inputs, mocks, and fixtures.
+   - **Act**: Execute the function or trigger the API call.
+   - **Assert**: Verify expected outcome and error codes.
+2. Identify the project test runner (Jest, Vitest, Pytest, Go test, Playwright).
+3. Create test files colocated or in `tests/`:
+   - Unit tests: Colocated `[name].spec.ts` next to the implementation.
+   - E2E / Integration tests: Placed under `tests/e2e/` or `tests/integration/`.
+4. Run tests and assert expectations clearly with descriptive error messages.
 
 ### 3. QA Checklist
 - [ ] All tests run and pass cleanly without flaky timeouts.

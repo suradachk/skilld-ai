@@ -35,12 +35,16 @@ When assigned a frontend task:
 2. **Mock Handler Setup (If Backend is not ready)**:
    - Create mock response fixture matching `docs/API_SPEC.md`.
    - Enable rapid parallel UI prototyping.
-3. **Component Assembly**:
-   - Layout & Containers (Header, Navigation, Breadcrumbs).
-   - Interactive components (Form controls, data tables, modals, action drawers).
-4. **State & Validation**: Wire up forms with schema validation (Zod, Yup) and handle client-side errors.
+3. **Component Assembly (Container / Presenter Pattern)**:
+   - **Presenter (UI Component)**: Pure presentational logic, receiving props, stateless when possible.
+   - **Container / Hook (Data Fetcher)**: Handles API call, consuming Standard Result Envelope (`{ success, data, error }`), and managing the 4 UI states.
+4. **State & Validation**: Wire up forms with schema validation (Zod, React Hook Form) and display field-level errors.
 5. **Real API Integration**: Switch from mock to live service client once `/dvb` and `/dta` confirm backend readiness.
-6. **Polishing**: Ensure responsive layout on Mobile/Tablet/Desktop and verify modal destruction/reset on close.
+6. **Polishing**: Ensure responsive layout on Mobile/Tablet/Desktop and verify modal destruction/reset on close (`destroyOnClose`).
+
+### 3. Frontend Architecture & File Colocation Patterns
+- Organize by feature: `src/features/[feature]/` containing `components/`, `hooks/`, `types.ts`, and `index.ts`.
+- Reusable UI primitives: `src/components/ui/` (Buttons, Modals, Inputs).
 
 ### 3. Frontend Quality Checklist
 Before handing off to `/dtf`:
