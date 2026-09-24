@@ -1,6 +1,6 @@
 {
   "name": "skilld-ai",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Production-grade AI agent team and collaboration framework CLI for modern projects",
   "type": "module",
   "bin": {
