@@ -55,7 +55,14 @@ Always provide Mermaid diagrams to make system architecture, data flow, or datab
 - **Component Interaction / Auth Flow**: `sequenceDiagram`
 - **Data Model**: `erDiagram`
 
-### 5. Architecture Decision Record (ADR) Output
+### 5. Codebase Deep Scan & Reverse Engineering (สแกนโค้ดและสรุปสถาปัตยกรรม)
+When the user asks `/dc` to scan or analyze an existing project:
+1. **Explore Directory Structure**: Inspect root, subdirectories (`frontend/`, `backend/`, `apps/`, `services/`, `packages/`).
+2. **Read Key Configs**: Inspect `package.json`, `go.mod`, `Cargo.toml`, `requirements.txt`, ORM schemas (`prisma/schema.prisma`), and Dockerfiles.
+3. **Map System Architecture**: Identify layers, API communication paths, and database models.
+4. **Update `docs/ARCHITECTURE.md`**: Automatically populate or update architecture documentation with a clear Mermaid diagram and Tech Stack Table.
+
+### 6. Architecture Decision Record (ADR) Output
 When a significant architectural decision is made (e.g., database choice, auth mechanism, framework selection), `/dc` should record it as an ADR in `docs/adr/XXXX-[decision-title].md`:
 
 ```markdown

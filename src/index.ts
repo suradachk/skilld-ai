@@ -18,7 +18,7 @@ const program = new Command();
 program
   .name("skilld-ai")
   .description("CLI scaffolding for AI Agent Team & Collaboration Framework")
-  .version("0.3.0");
+  .version("0.3.1");
 
 program
   .command("init")

@@ -24,6 +24,64 @@ export interface ProjectContext {
   hasOrm: boolean;
 }
 
+// Ignore directories that should never be scanned
+const IGNORED_DIRS = new Set([
+  "node_modules",
+  ".git",
+  "dist",
+  "build",
+  ".next",
+  ".output",
+  ".cache",
+  "vendor",
+  "target",
+  "bin",
+  "obj",
+  ".husky",
+  ".idea",
+  ".vscode",
+]);
+
+/**
+ * Dynamic Glob Scanner:
+ * Crawls directory recursively (up to maxDepth) to find all sub-projects (package.json, go.mod, requirements.txt)
+ */
+async function findSubProjects(dir: string, baseDir: string, currentDepth = 0, maxDepth = 4): Promise<string[]> {
+  if (currentDepth > maxDepth) return [];
+
+  const found: string[] = [];
+
+  try {
+    const entries = await fs.readdir(dir, { withFileTypes: true });
+
+    for (const entry of entries) {
+      if (!entry.isDirectory()) continue;
+      if (IGNORED_DIRS.has(entry.name) || entry.name.startsWith(".")) continue;
+
+      const fullSubPath = path.join(dir, entry.name);
+      const relPath = path.relative(baseDir, fullSubPath).replace(/\\/g, "/");
+
+      // Check if this directory is a project root
+      const hasPkg = await fileExists(path.join(fullSubPath, "package.json"));
+      const hasGo = await fileExists(path.join(fullSubPath, "go.mod"));
+      const hasPy = (await fileExists(path.join(fullSubPath, "requirements.txt"))) || (await fileExists(path.join(fullSubPath, "pyproject.toml")));
+      const hasCargo = await fileExists(path.join(fullSubPath, "Cargo.toml"));
+
+      if (hasPkg || hasGo || hasPy || hasCargo) {
+        found.push(relPath);
+      }
+
+      // Continue scanning deeper (e.g. apps/web, services/user-api)
+      const deeper = await findSubProjects(fullSubPath, baseDir, currentDepth + 1, maxDepth);
+      found.push(...deeper);
+    }
+  } catch {
+    // Ignore permission or unreadable errors
+  }
+
+  return found;
+}
+
 export async function detectProject(cwd: string): Promise<ProjectContext> {
   const rootPkgPath = path.join(cwd, "package.json");
   let isExisting = false;
@@ -37,29 +95,14 @@ export async function detectProject(cwd: string): Promise<ProjectContext> {
     isExisting = false;
   }
 
-  // Scan candidates directories for frontend / backend
-  const candidateDirs = [
-    "frontend",
-    "backend",
-    "client",
-    "server",
-    "ui",
-    "api",
-    "web",
-    "apps/web",
-    "apps/frontend",
-    "apps/api",
-    "apps/backend",
-    "apps/server",
-    "packages/ui",
-    "packages/api",
-  ];
-
+  // 1. Dynamic Deep Scan: Find all subdirectories containing project manifests
+  const detectedPaths = await findSubProjects(cwd, cwd);
   const subApps: SubAppInfo[] = [];
 
-  for (const relDir of candidateDirs) {
+  for (const relDir of detectedPaths) {
     const targetDir = path.join(cwd, relDir);
     const subPkg = path.join(targetDir, "package.json");
+
     if (await fileExists(subPkg)) {
       isExisting = true;
       try {
@@ -67,38 +110,44 @@ export async function detectProject(cwd: string): Promise<ProjectContext> {
         const data = JSON.parse(raw);
         const analyzed = analyzeDeps(data.dependencies, data.devDependencies, relDir);
         subApps.push({
-          name: data.name || relDir,
+          name: data.name || path.basename(relDir),
           path: relDir,
           ...analyzed,
         });
       } catch {
-        // Ignore malformed sub package.json
+        // Ignore JSON syntax error
       }
-    } else {
-      // Check for Python / Go in subdirs
-      if (await fileExists(path.join(targetDir, "requirements.txt")) || await fileExists(path.join(targetDir, "pyproject.toml"))) {
-        isExisting = true;
-        subApps.push({
-          name: relDir,
-          path: relDir,
-          type: "backend",
-          framework: "Python / FastAPI / Django",
-          hasTypeScript: false,
-        });
-      } else if (await fileExists(path.join(targetDir, "go.mod"))) {
-        isExisting = true;
-        subApps.push({
-          name: relDir,
-          path: relDir,
-          type: "backend",
-          framework: "Go",
-          hasTypeScript: false,
-        });
-      }
+    } else if (await fileExists(path.join(targetDir, "requirements.txt")) || await fileExists(path.join(targetDir, "pyproject.toml"))) {
+      isExisting = true;
+      subApps.push({
+        name: path.basename(relDir),
+        path: relDir,
+        type: "backend",
+        framework: "Python (FastAPI / Django)",
+        hasTypeScript: false,
+      });
+    } else if (await fileExists(path.join(targetDir, "go.mod"))) {
+      isExisting = true;
+      subApps.push({
+        name: path.basename(relDir),
+        path: relDir,
+        type: "backend",
+        framework: "Go",
+        hasTypeScript: false,
+      });
+    } else if (await fileExists(path.join(targetDir, "Cargo.toml"))) {
+      isExisting = true;
+      subApps.push({
+        name: path.basename(relDir),
+        path: relDir,
+        type: "backend",
+        framework: "Rust",
+        hasTypeScript: false,
+      });
     }
   }
 
-  // Analyze Root dependencies
+  // 2. Analyze Root dependencies
   const rootAnalyzed = analyzeDeps(rootPkgData.dependencies, rootPkgData.devDependencies, "root");
 
   let frontend = subApps.find((app) => app.type === "frontend");
@@ -153,8 +202,9 @@ function analyzeDeps(
   let type: "frontend" | "backend" | "shared" | "unknown" = "unknown";
   let framework = "None / Custom";
 
+  // Framework Detection
   if (allDeps["next"]) {
-    framework = "Next.js (Fullstack / React)";
+    framework = "Next.js";
     type = "frontend";
   } else if (allDeps["@nestjs/core"]) {
     framework = "NestJS";
@@ -165,32 +215,41 @@ function analyzeDeps(
   } else if (allDeps["fastify"]) {
     framework = "Fastify";
     type = "backend";
+  } else if (allDeps["@hono/node-server"] || allDeps["hono"]) {
+    framework = "Hono";
+    type = "backend";
   } else if (allDeps["react"]) {
-    framework = "React";
+    framework = "React (Vite / SPA)";
     type = "frontend";
   } else if (allDeps["vue"]) {
     framework = "Vue";
     type = "frontend";
   } else if (allDeps["svelte"] || allDeps["@sveltejs/kit"]) {
-    framework = "Svelte / SvelteKit";
+    framework = "SvelteKit";
+    type = "frontend";
+  } else if (allDeps["nuxt"]) {
+    framework = "Nuxt.js";
     type = "frontend";
   }
 
-  // Infer by directory name if not detected by dependencies
+  // Fallback heuristic by folder name
   if (type === "unknown") {
     const lower = contextName.toLowerCase();
-    if (lower.includes("frontend") || lower.includes("client") || lower.includes("ui") || lower.includes("web")) {
+    if (lower.includes("frontend") || lower.includes("client") || lower.includes("ui") || lower.includes("web") || lower.includes("app")) {
       type = "frontend";
-    } else if (lower.includes("backend") || lower.includes("server") || lower.includes("api")) {
+    } else if (lower.includes("backend") || lower.includes("server") || lower.includes("api") || lower.includes("service")) {
       type = "backend";
     }
   }
 
+  // Database / ORM Detection
   let database: string | undefined = undefined;
   if (allDeps["@prisma/client"] || allDeps["prisma"]) {
     database = "Prisma ORM";
   } else if (allDeps["drizzle-orm"]) {
     database = "Drizzle ORM";
+  } else if (allDeps["typeorm"]) {
+    database = "TypeORM";
   } else if (allDeps["mongoose"]) {
     database = "MongoDB (Mongoose)";
   } else if (allDeps["pg"]) {
